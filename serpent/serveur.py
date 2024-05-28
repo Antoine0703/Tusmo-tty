@@ -1,3 +1,12 @@
+##
+#####################################
+## Tusmo
+## BEAL Antoine // EPITECH
+## serveur.py
+## Code pour créer le serveur
+#####################################
+##
+
 import socket
 import threading
 import random
@@ -16,15 +25,15 @@ def check_guess(guess, secret_word):
     result = []
     for i in range(len(secret_word)):
         if correct_letters[i] == 1:
-            result.append(f'\033[31m{guess[i].upper()}\033[0m')  # ROUGE bonne position
+            result.append(f'\033[31m{guess[i].upper()}\033[0m')
         elif guess[i] in secret_word:
-            result.append(f'\033[33m{guess[i]}\033[0m')  # JAUNE bonne lettre mauvaise position
+            result.append(f'\033[33m{guess[i]}\033[0m')
         else:
             result.append("_")
     return ' '.join(result), guess == secret_word
 
 def handle_client(client_socket, secret_word, players, player_name, game_started, results_lock, results, connections, finished_players):
-    game_started.wait()  # Wait until the game is started by the host
+    game_started.wait()
     attempts = 10
     client_socket.send(f"The word has {len(secret_word)} letters.\n".encode('utf-8'))
 
@@ -68,18 +77,16 @@ def handle_client(client_socket, secret_word, players, player_name, game_started
 
     if not correct:
         client_socket.send(f"Sorry, you didn't guess the word. The word was {secret_word}.\n".encode('utf-8'))
-        players[player_name] = True  # Marquer le joueur comme terminé même s'il a échoué
+        players[player_name] = True
 
     with results_lock:
         finished_players.append(player_name)
         if len(finished_players) == len(players):
             game_over = True
 
-    # Attendre que tous les joueurs aient terminé
     while len(finished_players) < len(players):
         time.sleep(1)
 
-    # Envoi des résultats à chaque client
     with results_lock:
         sorted_results = sorted(results.items(), key=lambda item: (item[1][0], -item[1][1]), reverse=True)
         result_message = "Game over! Here are the results:\n"
@@ -90,7 +97,7 @@ def handle_client(client_socket, secret_word, players, player_name, game_started
         except OSError as e:
             print(f"Error sending results to {player_name}: {e}")
 
-    client_socket.close()  # Fermer le socket client à la fin de la fonction
+    client_socket.close()
 
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -136,7 +143,7 @@ def start_server():
 
     threading.Thread(target=wait_for_start).start()
 
-    game_started.wait()  # Wait for the host to start the game
+    game_started.wait()
     
     client_threads = []
     for client_socket, player_name in connections:
@@ -144,7 +151,6 @@ def start_server():
         client_threads.append(client_handler)
         client_handler.start()
 
-    # Attendre que tous les threads clients soient terminés
     for thread in client_threads:
         thread.join()
 

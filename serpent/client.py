@@ -1,3 +1,12 @@
+##
+#####################################
+## Tusmo
+## BEAL Antoine
+## client.py
+## Code pour rejoindre une partie(client)
+#####################################
+##
+
 import socket
 
 def play_game():
