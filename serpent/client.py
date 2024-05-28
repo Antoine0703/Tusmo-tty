@@ -1,7 +1,7 @@
 ##
 #####################################
 ## Tusmo
-## BEAL Antoine
+## BEAL Antoine  // EPITECH
 ## client.py
 ## Code pour rejoindre une partie(client)
 #####################################
