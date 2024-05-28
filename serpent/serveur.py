@@ -1,6 +1,7 @@
 import socket
 import threading
 import random
+import time
 
 def generate_secret_word():
     words = ['test', 'epitech', 'bravo', 'alpha', 'delta', 'hey']
@@ -27,6 +28,8 @@ def handle_client(client_socket, secret_word, players, player_name, game_started
     attempts = 10
     client_socket.send(f"The word has {len(secret_word)} letters.\n".encode('utf-8'))
 
+    start_time = time.time()
+
     while attempts > 0:
         client_socket.send("Guess the word: ".encode('utf-8'))
         try:
@@ -41,62 +44,47 @@ def handle_client(client_socket, secret_word, players, player_name, game_started
             continue
 
         result, correct = check_guess(guess, secret_word)
-        client_socket.send(f"{result}\n".encode('utf-8'))
+        try:
+            client_socket.send(f"{result}\n".encode('utf-8'))
+        except OSError as e:
+            print(f"Error sending result to {player_name}: {e}")
+            break
 
         if correct:
+            finish_time = time.time() - start_time
             with results_lock:
                 if player_name not in results:
-                    results[player_name] = attempts
+                    results[player_name] = (attempts, finish_time)
             client_socket.send("Congratulations! You've guessed the word.\n".encode('utf-8'))
             players[player_name] = True
             break
         else:
             attempts -= 1
-            client_socket.send(f"Incorrect guess. You have {attempts} attempts left.\n".encode('utf-8'))
+            try:
+                client_socket.send(f"Incorrect guess. You have {attempts} attempts left.\n".encode('utf-8'))
+            except OSError as e:
+                print(f"Error sending attempts left to {player_name}: {e}")
+                break
 
     if not correct:
         client_socket.send(f"Sorry, you didn't guess the word. The word was {secret_word}.\n".encode('utf-8'))
+        players[player_name] = True  # Marquer le joueur comme terminé même s'il a échoué
 
     # Check if all players have finished guessing
     if all(players.values()):
         with results_lock:
-            sorted_results = sorted(results.items(), key=lambda item: item[1], reverse=True)
+            sorted_results = sorted(results.items(), key=lambda item: (item[1][0], -item[1][1]), reverse=True)
             result_message = "Game over! Here are the results:\n"
-            for player, attempts in sorted_results:
+            for player, (attempts, _) in sorted_results:
                 result_message += f"{player} won with {attempts} attempts remaining.\n"
             print(result_message)
             for conn, _ in connections:
                 try:
                     conn.send(result_message.encode('utf-8'))
-                except Exception as e:
+                except OSError as e:
                     print(f"Error sending results to {conn}: {e}")
 
-            # Send results to each client
-            for conn, _ in connections:
-                try:
-                    conn.send(result_message.encode('utf-8'))
-                except Exception as e:
-                    print(f"Error sending results to {conn}: {e}")
-    # Affichage du classement sur le serveur
-    sorted_results = sorted(results.items(), key=lambda item: item[1], reverse=True)
-    result_message = "Game over! Here are the results:\n"
-    for player, attempts in sorted_results:
-        result_message += f"{player} won with {attempts} attempts remaining.\n"
-    print(result_message)
-
-    # Envoi du classement à tous les clients
-    for conn, _ in connections:
-        try:
-            conn.send(result_message.encode('utf-8'))
-        except Exception as e:
-            print(f"Error sending results to {conn}: {e}")
-
-    # Ne pas oublier de fermer les connexions clients après l'envoi du classement
-    for conn, _ in connections:
-        conn.close()
-
-
-    # Do not close client_socket here
+    client_socket.close()  # Fermer le socket client à la fin de la fonction
 
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
