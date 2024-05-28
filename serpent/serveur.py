@@ -23,7 +23,7 @@ def check_guess(guess, secret_word):
             result.append("_")
     return ' '.join(result), guess == secret_word
 
-def handle_client(client_socket, secret_word, players, player_name, game_started, results_lock, results, connections):
+def handle_client(client_socket, secret_word, players, player_name, game_started, results_lock, results, connections, finished_players):
     game_started.wait()  # Wait until the game is started by the host
     attempts = 10
     client_socket.send(f"The word has {len(secret_word)} letters.\n".encode('utf-8'))
@@ -70,19 +70,25 @@ def handle_client(client_socket, secret_word, players, player_name, game_started
         client_socket.send(f"Sorry, you didn't guess the word. The word was {secret_word}.\n".encode('utf-8'))
         players[player_name] = True  # Marquer le joueur comme terminé même s'il a échoué
 
-    # Check if all players have finished guessing
-    if all(players.values()):
-        with results_lock:
-            sorted_results = sorted(results.items(), key=lambda item: (item[1][0], -item[1][1]), reverse=True)
-            result_message = "Game over! Here are the results:\n"
-            for player, (attempts, _) in sorted_results:
-                result_message += f"{player} won with {attempts} attempts remaining.\n"
-            print(result_message)
-            for conn, _ in connections:
-                try:
-                    conn.send(result_message.encode('utf-8'))
-                except OSError as e:
-                    print(f"Error sending results to {conn}: {e}")
+    with results_lock:
+        finished_players.append(player_name)
+        if len(finished_players) == len(players):
+            game_over = True
+
+    # Attendre que tous les joueurs aient terminé
+    while len(finished_players) < len(players):
+        time.sleep(1)
+
+    # Envoi des résultats à chaque client
+    with results_lock:
+        sorted_results = sorted(results.items(), key=lambda item: (item[1][0], -item[1][1]), reverse=True)
+        result_message = "Game over! Here are the results:\n"
+        for player, (attempts, _) in sorted_results:
+            result_message += f"{player} won with {attempts} attempts remaining.\n"
+        try:
+            client_socket.send(result_message.encode('utf-8'))
+        except OSError as e:
+            print(f"Error sending results to {player_name}: {e}")
 
     client_socket.close()  # Fermer le socket client à la fin de la fonction
 
@@ -96,12 +102,12 @@ def start_server():
     connections = []
     secret_word = generate_secret_word()
     game_started = threading.Event()
-    host_set = False
     results = {}
     results_lock = threading.Lock()
+    finished_players = []
 
     def wait_for_start():
-        nonlocal host_set
+        host_set = False
         while True:
             client_socket, addr = server.accept()
             print(f"Accepted connection from {addr}")
@@ -132,13 +138,15 @@ def start_server():
 
     game_started.wait()  # Wait for the host to start the game
     
+    client_threads = []
     for client_socket, player_name in connections:
-        client_handler = threading.Thread(target=handle_client, args=(client_socket, secret_word, players, player_name, game_started, results_lock, results, connections))
+        client_handler = threading.Thread(target=handle_client, args=(client_socket, secret_word, players, player_name, game_started, results_lock, results, connections, finished_players))
+        client_threads.append(client_handler)
         client_handler.start()
 
-    for thread in threading.enumerate():
-        if thread is not threading.main_thread():
-            thread.join()
+    # Attendre que tous les threads clients soient terminés
+    for thread in client_threads:
+        thread.join()
 
     server.close()
 
