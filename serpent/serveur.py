@@ -13,7 +13,7 @@ import random
 import time
 
 def generate_secret_word():
-    words = ['test', 'epitech', 'bravo', 'alpha', 'delta', 'hey']
+    words = ['angle', 'armoire', 'banc', 'bureau', 'cabinet', 'carreau', 'chaise', 'classe', 'coin', 'couloir', 'dossier', 'eau', 'escalier', 'lavabo', 'lecture', 'lit', 'marche', 'matelas', 'allumette', 'anniversaire', 'beurre', 'coquille', 'dessert', 'envie', 'faim', 'four', 'galette', 'invitation', 'liquide', 'louche', 'moule', 'odeur', 'part', 'recette', 'rouleau', 'sel', 'soif', 'tarte', 'tranche', 'fruit', 'haricot', 'huile', 'marchand', 'melon', 'monnaie', 'navet', 'noisette', 'noix', 'nourriture', 'oignon', 'orange', 'panier', 'persil', ' poire', 'poireau', 'pomme', 'prix', 'prune', 'raisin', 'riz', 'salade', 'sucre', 'tomate', 'viande']
     return random.choice(words)
 
 def check_guess(guess, secret_word):
