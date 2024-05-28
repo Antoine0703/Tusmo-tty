@@ -4,7 +4,7 @@ Ce projet est une  implémentation simple du jeu tusmo dévelopée en Python.
 
 ## Fonctionnalité
 * Jeu tusmo classique avec une interface utilisateur en ligne de commande
-* Utilisation de la bibliothèque standard Python,pas de dépendances externes.
+* Utilisation de la bibliothèque standard Python, pas de dépendances externes.
 
 ## Comment jouer
 1. Assurez-vous d'avoir Python installé sur votre système.
@@ -21,4 +21,4 @@ Ce projet est une  implémentation simple du jeu tusmo dévelopée en Python.
 
 ## Code couleur
 * Jaune : Bonne lettre, mauvaise emplacement
-* Rouge = Bonne lettre, bon emplacement
+* Rouge : Bonne lettre, bon emplacement
