@@ -11,7 +11,7 @@ import socket
 
 def play_game():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('192.168.1.12', 9999))
+    client.connect(('10.109.255.134', 9999))
 
     name = input("Enter your name: ")
     client.send(name.encode('utf-8'))
